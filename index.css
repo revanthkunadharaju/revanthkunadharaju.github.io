@@ -9,3 +9,10 @@
      text-decoration: none;
      padding:15px;
 }
+#card{
+    border-style: solid;
+   border-color: black;
+   border-width: 2px; 
+   width:350px;
+   text-align: center;
+}
