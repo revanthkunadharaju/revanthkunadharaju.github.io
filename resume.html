@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Revanth Varma - Resume</title>
+    <link rel="stylesheet" href="index.css">
+
+    <style>
+        /* RESET */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* PAGE */
+        body {
+            background: #e5e5e5;
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
+
+        .navbar {
+            width: 100%;
+            min-height: 50px;
+            background-color: lightblue;
+            border-bottom: 2px solid black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 35px;
+            padding: 12px 15px;
+        }
+
+        .navbar a {
+            color: black;
+            text-decoration: none;
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+        }
+
+        /* A4 RESUME */
+        .resume {
+            width: 794px;
+            min-height: 1123px;
+            background: white;
+            margin: 30px auto;
+            padding: 45px 50px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.25);
+        }
+
+        /* HEADER */
+        .header {
+            width: 100%;
+            padding-bottom: 18px;
+            margin-bottom: 25px;
+            border-bottom: 1px solid #777;
+        }
+
+        .header h1 {
+            font-family: Georgia, serif;
+            font-size: 30px;
+            letter-spacing: 3px;
+            margin-bottom: 8px;
+            color: #222;
+        }
+
+        .header p {
+            font-size: 14px;
+            letter-spacing: 3px;
+            color: #555;
+        }
+
+        /* TWO-COLUMN LAYOUT */
+        .main {
+            display: grid;
+            grid-template-columns: 190px 1fr;
+            column-gap: 30px;
+            width: 100%;
+        }
+
+        /* SECTION HEADINGS */
+        .heading {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 14px;
+            letter-spacing: 3px;
+            margin-bottom: 5px;
+            color: #222;
+        }
+
+        .line {
+            height: 1px;
+            width: 100%;
+            background: #aaa;
+            margin-bottom: 12px;
+        }
+
+        /* LEFT COLUMN */
+        .left {
+            font-size: 12px;
+            min-width: 0;
+        }
+
+        .left-section {
+            margin-bottom: 25px;
+        }
+
+        /* CONTACT */
+        .contact p {
+            font-size: 12px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            overflow-wrap: anywhere;
+        }
+
+        /* EDUCATION */
+        .education-item {
+            margin-bottom: 18px;
+        }
+
+        .education-item strong {
+            display: block;
+            font-size: 12px;
+            line-height: 1.5;
+            margin-bottom: 5px;
+        }
+
+        .education-item p {
+            font-size: 12px;
+            line-height: 1.6;
+            margin-bottom: 3px;
+        }
+
+        /* CERTIFICATIONS AND SKILLS */
+        .skills {
+            padding-left: 17px;
+        }
+
+        .skills li {
+            font-size: 12px;
+            line-height: 1.6;
+            margin-bottom: 9px;
+        }
+
+        /* RIGHT COLUMN */
+        .right {
+            font-size: 12px;
+            min-width: 0;
+        }
+
+        .right-section {
+            margin-bottom: 25px;
+        }
+
+        /* PROFILE */
+        .about {
+            font-size: 12px;
+            line-height: 1.7;
+            text-align: justify;
+        }
+
+        /* PROJECTS */
+        .project {
+            margin-bottom: 15px;
+        }
+
+        .project h4 {
+            font-size: 12px;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .project ul,
+        .technical-skills {
+            padding-left: 17px;
+        }
+
+        .project li,
+        .technical-skills li {
+            font-size: 12px;
+            line-height: 1.6;
+            margin-bottom: 7px;
+        }
+
+        .project p {
+            font-size: 12px;
+            line-height: 1.6;
+            margin-top: 7px;
+            overflow-wrap: anywhere;
+        }
+
+        /* LINKS */
+        a {
+            color: #333;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* PRINT */
+        @media print {
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+
+            body {
+                background: white;
+            }
+
+            .resume {
+                width: 794px;
+                min-height: 1123px;
+                margin: 0;
+                box-shadow: none;
+            }
+
+            a {
+                color: #222;
+            }
+        }
+
+        /* TABLET */
+        @media screen and (max-width: 820px) {
+            .resume {
+                width: calc(100% - 20px);
+                min-height: auto;
+                margin: 10px auto;
+                padding: 28px 24px;
+            }
+
+            .main {
+                grid-template-columns: 34% 1fr;
+                column-gap: 20px;
+            }
+        }
+
+        /* MOBILE */
+        @media screen and (max-width: 560px) {
+            .resume {
+                padding: 24px 18px;
+            }
+
+            .main {
+                grid-template-columns: 1fr;
+            }
+
+            .left {
+                border-bottom: 1px solid #ccc;
+                padding-bottom: 8px;
+            }
+
+            .right {
+                padding-top: 20px;
+            }
+
+            .header h1 {
+                font-size: 25px;
+            }
+
+            .heading {
+                font-size: 14px;
+            }
+
+            .contact p,
+            .education-item strong,
+            .education-item p,
+            .skills li,
+            .about,
+            .project h4,
+            .project li,
+            .project p,
+            .technical-skills li {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav id="navbar">
+        <a href="index.html">Home</a>
+        <a href="toggle.html">Toggle User</a>
+        <a href="randomUser.html">Random User</a>
+        <a href="resume.html">Resume</a>
+    </nav>
+
+    <main class="resume">
+
+        <!-- HEADER -->
+        <header class="header">
+            <h1>REVANTH VARMA</h1>
+            <p>COMPUTER SCIENCE STUDENT</p>
+        </header>
+
+        <!-- TWO COLUMNS -->
+        <div class="main">
+
+            <!-- LEFT COLUMN -->
+            <aside class="left">
+
+                <!-- CONTACT -->
+                <section class="left-section contact">
+                    <h2 class="heading">CONTACT</h2>
+                    <div class="line"></div>
+
+                    <p>📍 Hyderabad, Telangana, India</p>
+
+                    <p>
+                        ✉
+                        <a href="mailto:your-email@gmail.com">
+                            your-email@gmail.com
+                        </a>
+                    </p>
+
+                    <p>
+                        🔗
+                        <a href="https://www.linkedin.com/"
+                           target="_blank"
+                           rel="noopener noreferrer">
+                            LinkedIn
+                        </a>
+                    </p>
+                </section>
+
+                <!-- EDUCATION -->
+                <section class="left-section">
+                    <h2 class="heading">EDUCATION</h2>
+                    <div class="line"></div>
+
+                    <div class="education-item">
+                        <strong>
+                            Gokaraju Rangaraju Institute of Engineering
+                            and Technology (GRIET)
+                        </strong>
+
+                        <p>B.Tech in Computer Science and Engineering</p>
+                        <p>2024–2028</p>
+                    </div>
+                </section>
+
+                <!-- CERTIFICATIONS -->
+                <section class="left-section">
+                    <h2 class="heading">CERTIFICATIONS</h2>
+                    <div class="line"></div>
+
+                    <ul class="skills">
+                        <li>
+                            HackGenesis Hackathon – Innovatex Club
+                        </li>
+
+                        <li>
+                            SEEKH Certification – Smart Supermarket Project
+                        </li>
+
+                        <li>
+                            Artificial Intelligence Fundamentals – IBM
+                        </li>
+
+                        <li>
+                            Technology Job Simulation Certification – Deloitte
+                        </li>
+                    </ul>
+                </section>
+
+                <!-- SKILLS -->
+                <section class="left-section">
+                    <h2 class="heading">SKILLS</h2>
+                    <div class="line"></div>
+
+                    <ul class="skills">
+                        <li>Communication</li>
+                        <li>Problem-solving</li>
+                        <li>Organization and time management</li>
+                    </ul>
+                </section>
+
+            </aside>
+
+            <!-- RIGHT COLUMN -->
+            <div class="right">
+
+                <!-- PROFILE -->
+                <section class="right-section">
+                    <h2 class="heading">PROFILE</h2>
+                    <div class="line"></div>
+
+                    <p class="about">
+                        Motivated and detail-oriented Computer Science
+                        student with a strong passion for software
+                        development and building innovative solutions.
+                        Seeking opportunities to enhance technical skills
+                        and contribute to real-world projects. Eager to
+                        learn emerging technologies and grow as a developer
+                        while creating impactful and efficient software
+                        applications.
+                    </p>
+                </section>
+
+                <!-- PROJECTS -->
+                <section class="right-section">
+                    <h2 class="heading">PROJECTS</h2>
+                    <div class="line"></div>
+
+                    <div class="project">
+                        <h4>SPOTIFY SONG RECOMMENDATION</h4>
+
+                        <ul>
+                            <li>
+                                Developed a Spotify Song Recommendation
+                                System using clustering techniques to
+                                analyze listening patterns and suggest
+                                similar songs and artists.
+                            </li>
+
+                            <li>
+                                Grouped songs based on comparable audio
+                                features to support personalized
+                                recommendations.
+                            </li>
+
+                            <li>
+                                Used data analysis to understand and model
+                                user preferences for music suggestions.
+                            </li>
+                        </ul>
+
+                        <p>
+                            <strong>GitHub:</strong>
+                            <a href="https://github.com/"
+                               target="_blank"
+                               rel="noopener noreferrer">
+                                GitHub Profile
+                            </a>
+                        </p>
+                    </div>
+                </section>
+
+                <!-- TECHNICAL SKILLS -->
+                <section class="right-section">
+                    <h2 class="heading">TECHNICAL SKILLS</h2>
+                    <div class="line"></div>
+
+                    <ul class="technical-skills">
+                        <li>
+                            <strong>Programming Languages:</strong>
+                            Python, Java, C (Data Structures)
+                        </li>
+
+                        <li>
+                            <strong>AI / ML &amp; Data:</strong>
+                            Machine Learning Concepts, Data Analytics
+                        </li>
+
+                        <li>
+                            <strong>Tools &amp; Libraries:</strong>
+                            Jupyter Notebook, Pandas, NumPy, Matplotlib,
+                            Scikit-learn, Git
+                        </li>
+
+                        <li>
+                            <strong>Microsoft Office:</strong>
+                            PowerPoint, Excel, Word
+                        </li>
+                    </ul>
+                </section>
+
+            </div>
+        </div>
+
+    </main>
+
+</body>
+</html>
