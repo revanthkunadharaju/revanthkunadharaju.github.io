@@ -1,0 +1,496 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CareLens — Gentle Medical Report Guide</title>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; }
+  body { background:linear-gradient(135deg,#e8f5e9,#e3f2fd); min-height:100vh; color:#2c3e50; }
+  header { background:#2e7d32; color:#fff; padding:20px; text-align:center; }
+  header h1 { font-size:1.8rem; }
+  header p { opacity:.9; font-size:.95rem; margin-top:4px; }
+  .container { max-width:900px; margin:24px auto; padding:0 16px; }
+  .card { background:#fff; border-radius:14px; box-shadow:0 4px 14px rgba(0,0,0,.08); padding:24px; margin-bottom:24px; }
+  .card h2 { color:#2e7d32; margin-bottom:12px; font-size:1.25rem; }
+  textarea { width:100%; min-height:160px; padding:12px; border:1px solid #cfd8dc; border-radius:10px; font-size:.95rem; resize:vertical; }
+  button { background:#2e7d32; color:#fff; border:none; padding:12px 24px; border-radius:8px; font-size:1rem; cursor:pointer; margin-top:12px; }
+  button:hover { background:#1b5e20; }
+  .lang-select { margin-top:10px; }
+  select { padding:8px; border-radius:6px; border:1px solid #cfd8dc; font-size:.95rem; }
+  .mode-tabs { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+  .mode-tabs button { margin-top:0; background:#eceff1; color:#455a64; padding:10px 20px; border-radius:20px; font-weight:600; }
+  .mode-tabs button.active { background:#2e7d32; color:#fff; }
+  .input-section { display:none; }
+  .input-section.active { display:block; }
+  .drop-zone { border:2px dashed #a5d6a7; border-radius:12px; padding:30px; text-align:center; color:#66bb6a; cursor:pointer; transition:.2s; }
+  .drop-zone:hover, .drop-zone.dragover { background:#f1f8e9; border-color:#66bb6a; }
+  .drop-zone p { font-size:.95rem; }
+  #imgPreview { max-width:100%; max-height:300px; border-radius:10px; margin-top:12px; display:none; box-shadow:0 2px 8px rgba(0,0,0,.1); }
+  .status { margin-top:10px; font-size:.9rem; color:#2e7d32; display:none; }
+  .status.warn { color:#e65100; }
+  .spinner { display:inline-block; width:16px; height:16px; border:3px solid #c8e6c9; border-top-color:#2e7d32; border-radius:50%; animation:spin 1s linear infinite; vertical-align:middle; margin-right:6px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .tips { background:#fff8e1; border-left:5px solid #ffb300; padding:12px 14px; border-radius:8px; margin-top:14px; font-size:.9rem; color:#5d4037; }
+  .tips strong { color:#e65100; }
+  .tips li { margin-left:18px; margin-top:4px; }
+  .retry-row { display:flex; gap:10px; flex-wrap:wrap; }
+  .retry-row button { margin-top:10px; padding:10px 18px; font-size:.9rem; }
+  .btn-secondary { background:#eceff1 !important; color:#455a64 !important; }
+  .result { margin-top:16px; display:none; }
+  .summary-box { background:#f1f8e9; border-left:5px solid #66bb6a; padding:14px; border-radius:8px; margin-bottom:12px; }
+  .finding { background:#fafafa; border:1px solid #eee; border-radius:8px; padding:12px; margin-bottom:10px; }
+  .finding .tag { display:inline-block; padding:2px 10px; border-radius:12px; font-size:.8rem; color:#fff; background:#ffb300; }
+  #chat-window { height:340px; overflow-y:auto; background:#f5f7f8; border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:10px; }
+  .msg { max-width:78%; padding:10px 14px; border-radius:14px; font-size:.95rem; line-height:1.45; white-space:pre-wrap; }
+  .bot { background:#fff; border:1px solid #e0e0e0; align-self:flex-start; border-bottom-left-radius:4px; }
+  .user { background:#2e7d32; color:#fff; align-self:flex-end; border-bottom-right-radius:4px; }
+  .chat-input { display:flex; gap:8px; margin-top:12px; }
+  .chat-input input { flex:1; padding:12px; border:1px solid #cfd8dc; border-radius:8px; font-size:.95rem; }
+  .disclaimer { font-size:.8rem; color:#78909c; margin-top:10px; text-align:center; }
+  .quick { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .quick button { background:#e8f5e9; color:#2e7d32; padding:6px 12px; font-size:.85rem; margin-top:0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🌿 CareLens</h1>
+  <p>A calm, friendly guide to understanding your medical report</p>
+</header>
+<div class="container">
+
+  <div class="card">
+    <h2>1. Share Your Report</h2>
+    <p style="margin-bottom:12px;">Choose how you'd like to share your report — <b>text</b>, an <b>image/photo</b>, or a <b>PDF file</b> (the way doctors usually share reports). Everything stays on your device.</p>
+
+    <div class="mode-tabs">
+      <button id="tabText" class="active" onclick="setMode('text')">📝 Type or Paste Text</button>
+      <button id="tabImage" onclick="setMode('image')">📷 Upload Image / Photo</button>
+      <button id="tabPdf" onclick="setMode('pdf')">📄 Upload PDF</button>
+    </div>
+
+    <div id="sectionText" class="input-section active">
+      <textarea id="report" placeholder="e.g. Hemoglobin: 10.2 g/dL (Low)&#10;Blood Pressure: 135/85 mmHg&#10;Fasting Blood Sugar: 112 mg/dL&#10;Vitamin D: 18 ng/mL (Low)..."></textarea>
+    </div>
+
+    <div id="sectionImage" class="input-section">
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('imgFile').click()">
+        <p style="font-size:1.6rem;">📸</p>
+        <p><strong>Click or drop your report image here</strong></p>
+        <p style="font-size:.85rem;color:#90a4ae;margin-top:6px;">JPG, PNG or a photo of your lab report. We automatically enhance the image before reading it.</p>
+      </div>
+      <input type="file" id="imgFile" accept="image/*" capture="environment" style="display:none">
+      <img id="imgPreview" alt="Report preview">
+      <div class="status" id="ocrStatus"></div>
+      <div class="retry-row" id="retryRow" style="display:none;">
+        <button class="btn-secondary" onclick="document.getElementById('imgFile').click()">🔄 Try Another Photo</button>
+        <button class="btn-secondary" onclick="setMode('text')">📝 Type It Instead</button>
+        <button onclick="retryEnhanced()">✨ Try Harder Reading Mode</button>
+      </div>
+      <div class="tips" id="photoTips" style="display:none;">
+        <strong>📸 Tips for a clear photo:</strong>
+        <ul>
+          <li>Place the report on a <b>flat, dark surface</b> in good light (near a window is ideal).</li>
+          <li>Hold the phone <b>directly above</b> the report — not at an angle.</li>
+          <li>Fill the frame with the report; get <b>close enough</b> that text looks large.</li>
+          <li>Tap the screen to <b>focus</b> before taking the picture.</li>
+          <li>Avoid shadows, glare from lights, and blurry hands — rest the phone on something if possible.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div id="sectionPdf" class="input-section">
+      <div class="drop-zone" id="pdfZone" onclick="document.getElementById('pdfFile').click()">
+        <p style="font-size:1.6rem;">📄</p>
+        <p><strong>Click or drop your PDF report here</strong></p>
+        <p style="font-size:.85rem;color:#90a4ae;margin-top:6px;">Most doctor and lab reports shared as PDFs work perfectly. Multi-page PDFs are supported too.</p>
+      </div>
+      <input type="file" id="pdfFile" accept="application/pdf" style="display:none">
+      <div class="status" id="pdfStatus"></div>
+      <div class="retry-row" id="pdfRetryRow" style="display:none;">
+        <button class="btn-secondary" onclick="document.getElementById('pdfFile').click()">🔄 Try Another PDF</button>
+        <button class="btn-secondary" onclick="setMode('text')">📝 Type It Instead</button>
+      </div>
+      <div class="tips" id="pdfTips" style="display:none;">
+        <strong>📄 About PDF reports:</strong>
+        <ul>
+          <li><b>Digital PDFs</b> (typed text, downloaded from a lab portal) read instantly and accurately.</li>
+          <li><b>Scanned PDFs</b> (photos of pages saved as PDF) are read like images — clear scans work best.</li>
+          <li>If a scanned PDF is hard to read, a clear photo of the report via the Image tab often works better.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="lang-select">
+      Preferred language:
+      <select id="lang">
+        <option value="en">English</option>
+        <option value="te">తెలుగు (Telugu)</option>
+        <option value="hi">हिन्दी (Hindi)</option>
+        <option value="ta">தமிழ் (Tamil)</option>
+      </select>
+    </div>
+    <button id="analyzeBtn" onclick="analyze()">Understand My Report</button>
+    <div id="result" class="result">
+      <div class="summary-box" id="summary"></div>
+      <div id="findings"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>2. Chat with CareBot 💬</h2>
+    <div class="lang-select" style="margin-bottom:10px;">Chat language:
+      <select id="chatLang">
+        <option value="en">English</option>
+        <option value="te">తెలుగు</option>
+        <option value="hi">हिन्दी</option>
+        <option value="ta">தமிழ்</option>
+      </select>
+    </div>
+    <div id="chat-window"></div>
+    <div class="quick" id="quickBtns"></div>
+    <div class="chat-input">
+      <input id="chatText" placeholder="Type your question..." onkeydown="if(event.key==='Enter')send()">
+      <button onclick="send()">Send</button>
+    </div>
+    <p class="disclaimer">CareBot offers general reassurance and information only. It is not a doctor. Always consult a qualified healthcare professional for diagnosis and treatment.</p>
+  </div>
+
+</div>
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+let currentMode = "text";
+let lastImageSrc = null;
+
+function setMode(mode){
+  currentMode = mode;
+  ["Text","Image","Pdf"].forEach(m=>{
+    document.getElementById("tab"+m).classList.toggle("active", mode===m.toLowerCase());
+    document.getElementById("section"+m).classList.toggle("active", mode===m.toLowerCase());
+  });
+}
+
+// ---------- Image upload + preprocessing + OCR ----------
+const dropZone = document.getElementById("dropZone");
+const imgFile = document.getElementById("imgFile");
+const imgPreview = document.getElementById("imgPreview");
+const ocrStatus = document.getElementById("ocrStatus");
+const retryRow = document.getElementById("retryRow");
+const photoTips = document.getElementById("photoTips");
+
+dropZone.addEventListener("dragover", e=>{ e.preventDefault(); dropZone.classList.add("dragover"); });
+dropZone.addEventListener("dragleave", ()=> dropZone.classList.remove("dragover"));
+dropZone.addEventListener("drop", e=>{
+  e.preventDefault(); dropZone.classList.remove("dragover");
+  if(e.dataTransfer.files.length) handleImage(e.dataTransfer.files[0]);
+});
+imgFile.addEventListener("change", ()=>{ if(imgFile.files.length) handleImage(imgFile.files[0]); });
+
+function handleImage(file){
+  if(!file.type.startsWith("image/")){ alert("Please choose an image file (JPG or PNG)."); return; }
+  retryRow.style.display = "none";
+  photoTips.style.display = "none";
+  const reader = new FileReader();
+  reader.onload = e=>{
+    lastImageSrc = e.target.result;
+    imgPreview.src = lastImageSrc;
+    imgPreview.style.display = "block";
+    runOCR(lastImageSrc, false);
+  };
+  reader.readAsDataURL(file);
+}
+
+function enhanceImage(src, aggressive){
+  return new Promise(resolve=>{
+    const img = new Image();
+    img.onload = ()=>{
+      let w = img.width, h = img.height;
+      const target = aggressive ? 2400 : 1600;
+      if(Math.max(w,h) < target){
+        const scale = target / Math.max(w,h);
+        w = Math.round(w*scale); h = Math.round(h*scale);
+      }
+      const c = document.createElement("canvas");
+      c.width = w; c.height = h;
+      const ctx = c.getContext("2d");
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      ctx.drawImage(img, 0, 0, w, h);
+      const d = ctx.getImageData(0,0,w,h);
+      const px = d.data;
+      const hist = new Array(256).fill(0);
+      for(let i=0;i<px.length;i+=4){
+        const g = 0.299*px[i] + 0.587*px[i+1] + 0.114*px[i+2];
+        px[i]=px[i+1]=px[i+2]=g;
+        hist[Math.round(g)]++;
+      }
+      const total = w*h;
+      let lo=0, hi=255, acc=0;
+      for(let i=0;i<256;i++){ acc+=hist[i]; if(acc > total*0.02){ lo=i; break; } }
+      acc=0;
+      for(let i=255;i>=0;i--){ acc+=hist[i]; if(acc > total*0.02){ hi=i; break; } }
+      const range = Math.max(1, hi-lo);
+      for(let i=0;i<px.length;i+=4){
+        let v = (px[i]-lo)*255/range;
+        v = Math.max(0, Math.min(255, v));
+        if(aggressive){
+          v = v<128 ? v*0.7 : 128 + (v-128)*1.5;
+          v = Math.max(0, Math.min(255, v));
+        }
+        px[i]=px[i+1]=px[i+2]=v;
+      }
+      ctx.putImageData(d,0,0);
+      resolve(c.toDataURL("image/png"));
+    };
+    img.src = src;
+  });
+}
+
+async function runOCR(imageSrc, aggressive){
+  ocrStatus.style.display = "block";
+  ocrStatus.className = "status";
+  ocrStatus.innerHTML = '<span class="spinner"></span>' + (aggressive ? "Trying harder with enhanced reading..." : "Enhancing your photo and reading the text... this may take a few seconds.");
+  try{
+    const processed = await enhanceImage(imageSrc, aggressive);
+    const result = await Tesseract.recognize(processed, 'eng');
+    const text = (result.data.text || "").trim();
+    const conf = result.data.confidence || 0;
+    if(text.length < 10 || conf < 35){
+      showReadTrouble(aggressive);
+    } else {
+      document.getElementById("report").value = text;
+      ocrStatus.innerHTML = "✅ Report read successfully! (Tip: check the Text tab to review or correct what we read.)";
+      retryRow.style.display = "none";
+      photoTips.style.display = "none";
+    }
+  }catch(err){
+    showReadTrouble(aggressive);
+  }
+}
+
+function showReadTrouble(aggressive){
+  ocrStatus.className = "status warn";
+  if(!aggressive){
+    ocrStatus.innerHTML = "📷 That photo was a little hard to read. No problem — you can try again, and we'll automatically sharpen and brighten it first. You can also check the tips below.";
+  } else {
+    ocrStatus.innerHTML = "📷 We still couldn't read this one clearly. That's okay — it happens! The easiest path is the <b>Text tab</b>: just type the few values you see (like Hemoglobin, Sugar, BP). Or try a new photo using the tips below.";
+  }
+  retryRow.style.display = "flex";
+  photoTips.style.display = "block";
+}
+
+function retryEnhanced(){
+  if(lastImageSrc) runOCR(lastImageSrc, true);
+}
+
+// ---------- PDF handling ----------
+const pdfZone = document.getElementById("pdfZone");
+const pdfFile = document.getElementById("pdfFile");
+const pdfStatus = document.getElementById("pdfStatus");
+const pdfRetryRow = document.getElementById("pdfRetryRow");
+const pdfTips = document.getElementById("pdfTips");
+
+pdfZone.addEventListener("dragover", e=>{ e.preventDefault(); pdfZone.classList.add("dragover"); });
+pdfZone.addEventListener("dragleave", ()=> pdfZone.classList.remove("dragover"));
+pdfZone.addEventListener("drop", e=>{
+  e.preventDefault(); pdfZone.classList.remove("dragover");
+  if(e.dataTransfer.files.length) handlePdf(e.dataTransfer.files[0]);
+});
+pdfFile.addEventListener("change", ()=>{ if(pdfFile.files.length) handlePdf(pdfFile.files[0]); });
+
+function pdfMsg(html, warn){
+  pdfStatus.style.display = "block";
+  pdfStatus.className = "status" + (warn ? " warn" : "");
+  pdfStatus.innerHTML = html;
+}
+
+async function handlePdf(file){
+  if(file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")){
+    alert("Please choose a PDF file."); return;
+  }
+  pdfRetryRow.style.display = "none";
+  pdfTips.style.display = "none";
+  pdfMsg('<span class="spinner"></span>Opening your PDF...');
+  try{
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+    let fullText = "";
+    const scannedPages = [];
+    for(let p=1; p<=pdf.numPages; p++){
+      pdfMsg('<span class="spinner"></span>Reading page ' + p + ' of ' + pdf.numPages + '...');
+      const page = await pdf.getPage(p);
+      const tc = await page.getTextContent();
+      const pageText = tc.items.map(i=>i.str).join(" ").trim();
+      if(pageText.length > 20){
+        fullText += pageText + "\n";
+      } else {
+        scannedPages.push(p); // likely a scanned page — OCR it
+      }
+    }
+
+    // OCR scanned pages
+    for(const p of scannedPages){
+      pdfMsg('<span class="spinner"></span>This looks like a scanned PDF — reading page ' + p + ' like a photo (this can take a little longer)...');
+      const page = await pdf.getPage(p);
+      const vp = page.getViewport({scale: 2.0});
+      const c = document.createElement("canvas");
+      c.width = vp.width; c.height = vp.height;
+      await page.render({canvasContext: c.getContext("2d"), viewport: vp}).promise;
+      const processed = await enhanceImage(c.toDataURL("image/png"), false);
+      const result = await Tesseract.recognize(processed, 'eng');
+      fullText += (result.data.text || "") + "\n";
+    }
+    fullText = fullText.trim();
+    if(fullText.length < 10){
+      pdfMsg("📄 We opened the PDF but couldn't read enough text from it. This sometimes happens with very low-quality scans. You can try another PDF, or use a clear photo of the report in the Image tab — or simply type the values in the Text tab.", true);
+      pdfRetryRow.style.display = "flex";
+      pdfTips.style.display = "block";
+    } else {
+      document.getElementById("report").value = fullText;
+      const note = scannedPages.length ? " (Some pages were scanned images — we read them like photos.)" : "";
+      pdfMsg("✅ PDF read successfully — " + pdf.numPages + " page" + (pdf.numPages>1?"s":"") + "!" + note + " (Tip: check the Text tab to review or correct what we read.)");
+    }
+  }catch(err){
+    pdfMsg("📄 Sorry, we couldn't open this PDF. It may be password-protected or damaged. If it needs a password, please remove it first — or share the report as a photo or text instead.", true);
+    pdfRetryRow.style.display = "flex";
+    pdfTips.style.display = "block";
+  }
+}
+
+// ---------- Analysis ----------
+const T = {
+  en: {
+    someWatch:"🌿 Nothing in your report is an emergency. A few values are slightly outside the typical range, which happens to many people and can often be improved with small, steady changes.",
+    normal:"✅ Great news — all the values we checked appear within the typical range. Keep up your healthy habits!",
+    next:"💡 Gentle next step: share this report with your doctor at your next visit, stay hydrated, eat balanced meals, and try light daily activity. There is no need to worry.",
+    watch:"Slightly outside typical range — worth a gentle watch",
+    normalTag:"Within typical range",
+    empty:"Please share your report first — paste text, upload an image, or upload a PDF."
+  },
+  te: {
+    someWatch:"🌿 మీ రిపోర్ట్‌లో ఏదీ అత్యవసరం కాదు. కొన్ని విలువలు స్వల్పంగా సాధారణ పరిధికి వెలుపల ఉన్నాయి — ఇది చాలామందికి జరుగుతుంది, చిన్న మార్పులతో మెరుగవుతుంది.",
+    normal:"✅ శుభవార్త — తనిఖీ చేసిన అన్ని విలువలు సాధారణ పరిధిలోనే ఉన్నాయి. మీ ఆరోగ్యకరమైన అలవాట్లను కొనసాగించండి!",
+    next:"💡 తేలికపాటి చర్య: తదుపరి సందర్శనలో ఈ రిపోర్ట్‌ను డాక్టర్‌తో చూపించండి, నీళ్లు బాగా తాగండి, సమతుల్య ఆహారం తీసుకోండి. భయపడాల్సిన అవసరం లేదు.",
+    watch:"సాధారణ పరిధికి స్వల్పంగా వెలుపల — కొద్దిగా గమనించండి",
+    normalTag:"సాధారణ పరిధిలో ఉంది",
+    empty:"దయచేసి ముందుగా మీ రిపోర్ట్‌ను పంపండి — టెక్స్ట్ టైప్ చేయండి, ఇమేజ్ లేదా PDF అప్‌లోడ్ చేయండి."
+  },
+  hi: {
+    someWatch:"🌿 आपकी रिपोर्ट में कुछ भी आपातकालीन नहीं है। कुछ मान सामान्य सीमा से थोड़े बाहर हैं — यह बहुतों के साथ होता है और छोटे-छोटे बदलावों से सुधर सकता है।",
+    normal:"✅ खुशखबरी — जाँचे गए सभी मान सामान्य सीमा में हैं। अपनी अच्छी आदतें जारी रखें!",
+    next:"💡 आगे का कदम: अगली विज़िट पर यह रिपोर्ट डॉक्टर को दिखाएँ, पानी खूब पिएँ, संतुलित भोजन करें। घबराने की ज़रूरत नहीं है।",
+    watch:"सामान्य सीमा से थोड़ा बाहर — हल्का ध्यान रखें",
+    normalTag:"सामान्य सीमा में",
+    empty:"कृपया पहले अपनी रिपोर्ट साझा करें — टेक्स्ट लिखें, इमेज या PDF अपलोड करें।"
+  },
+  ta: {
+    someWatch:"🌿 உங்கள் அறிக்கையில் எதுவும் அவசரம் அல்ல. சில மதிப்புகள் சாதாரண வரம்பிலிருந்து சற்று விலகி உள்ளன — இது பலருக்கும் நிகழ்கிறது, சிறிய மாற்றங்களால் முன்னேறலாம்.",
+    normal:"✅ நல்ல செய்தி — சரிபார்க்கப்பட்ட அனைத்து மதிப்புகளும் சாதாரண வரம்பில் உள்ளன. ஆரோக்கியமான பழக்கங்களை தொடர்ந்து கடைப்பிடியுங்கள்!",
+    next:"💡 அடுத்த படி: அடுத்த வருகையில் இந்த அறிக்கையை மருத்துவரிடம் காட்டுங்கள், நீர் அதிகம் குடியுங்கள், சீரான உணவு உட்கொள்ளுங்கள். கவலைப்பட வேண்டாம்.",
+    watch:"சாதாரண வரம்பிலிருந்து சற்று வெளியே — லேசாக கவனிக்கவும்",
+    normalTag:"சாதாரண வரம்பில் உள்ளது",
+    empty:"தயவுசெய்து முதலில் உங்கள் அறிக்கையைப் பகிருங்கள் — உரையை தட்டச்சு செய்யவும், படம் அல்லது PDF பதிவேற்றவும்."
+  }
+};
+
+const KB = {
+  hemoglobin:{en:"Hemoglobin carries oxygen in your blood. A slightly low value is very common (often linked to iron) and usually improves with iron-rich foods like spinach, lentils, and dates.",te:"హిమోగ్లోబిన్ రక్తంలో ఆక్సిజన్ తీసుకెళ్తుంది. కొద్దిగా తక్కువగా ఉండటం చాలా సాధారణం — పాలకూర, పప్పులు, ఖర్జూరాలు వంటి ఐరన్ ఆహారాలతో మెరుగవుతుంది.",hi:"हीमोग्लोबिन खून में ऑक्सीजन ले जाता है। थोड़ा कम होना बहुत आम है — पालक, दाल, खजूर जैसे आयरन युक्त आहार से आमतौर पर सुधर जाता है।",ta:"ஹீமோகுளோபின் இரத்தத்தில் ஆக்ஸிஜனை கொண்டு செல்கிறது. சற்றுக் குறைவாக இருப்பது மிகவும் பொதுவானது — கீரை, பருப்பு, பேரீச்சம்பழம் போன்ற இரும்பு உணவுகளால் முன்னேறும்."},
+  sugar:{en:"Blood sugar slightly above normal is common and often responds well to balanced meals, walking after dinner, and less sugary drinks. Your doctor can guide you further.",te:"రక్తంలో చక్కెర కొద్దిగా ఎక్కువగా ఉండటం సాధారణం. సమతుల్య భోజనం, భోజనం తర్వాత నడక, తక్కువ తీపి పానీయాలతో సాధారణంగా మెరుగవుతుంది.",hi:"ब्लड शुगर का थोड़ा बढ़ना आम है। संतुलित भोजन, भोजन के बाद सैर, और कम मीठे पेय से आमतौर पर सुधर होता है।",ta:"இரத்த சர்க்கரை சற்று அதிகமாக இருப்பது பொதுவானது. சீரான உணவு, உணவுக்குப் பிறகு நடை, குறைவான இனிப்பு பானங்களால் முன்னேறும்."},
+  pressure:{en:"Blood pressure a little above normal is very common. Reducing salt, deep breathing, and a short daily walk often help bring it down gently.",te:"రక్తపోటు కొద్దిగా ఎక్కువగా ఉండటం చాలా సాధారణం. ఉప్పు తగ్గించడం, లోతైన శ్వాస, రోజూ చిన్న నడక సహాయపడతాయి.",hi:"ब्लड प्रेशर का थोड़ा बढ़ना बहुत आम है। नमून कम करना, गहरी साँस, और रोज़ थोड़ी सैर मदद करती है।",ta:"இரத்த அழுத்தம் சற்று அதிகமாக இருப்பது மிகவும் பொதுவானது. உப்பு குறைத்தல், ஆழ்ந்த மூச்சு, தினசரி நடை உதவும்."},
+  vitamin:{en:"Low vitamin D is extremely common, especially with indoor lifestyles. A short morning walk in sunlight and doctor-suggested supplements usually fix it easily.",te:"విటమిన్ D తక్కువగా ఉండటం చాలా సాధారణం. ఉదయం ఎండలో నడక మరియు డాక్టర్ సూచించిన మందులతో సులభంగా సరిపోతుంది.",hi:"विटामिन D का कम होना बहुत आम है। सुबह की धूप में सैर और डॉक्टर की सलाह से आसानी से ठीक हो जाता है।",ta:"வைட்டமின் D குறைவாக இருப்பது மிகவும் பொதுவானது. காலை வெயிலில் நடை மற்றும் மருத்துவர் பரிந்துரையால் எளிதாக சரியாகும்."},
+  cholesterol:{en:"Mildly raised cholesterol is one of the most common findings worldwide. More fiber, less fried food, and regular movement usually bring it back in range.",te:"కొలెస్ట్రాల్ కొద్దిగా ఎక్కువగా ఉండటం ప్రపంచవ్యాప్తంగా అత్యంత సాధారణం. ఫైబర్ ఎక్కువగా, వేపుడు తక్కువగా, క్రమం తప్పకుండా కదలికతో సరిపోతుంది.",hi:"कोलेस्ट्रॉल का थोड़ा बढ़ना दुनिया में सबसे आम है। ज़्यादा फाइबर, कम तला खाना, नियमित गतिविधि से सामान्य हो जाता है।",ta:"கொலஸ்ட்ரால் சற்று அதிகமாக இருப்பது உலகளவில் மிகவும் பொதுவானது. அதிக நார்ச்சத்து, குறைவான பொரியல், தொடர் இயக்கம் சரிசெய்யும்."},
+  worried:{en:"It's completely natural to feel concerned, but please take a breath — nothing here suggests an emergency. Slightly off values are extremely common and usually manageable. Your doctor is your best partner for the next step.",te:"ఆందోళన రావడం సహజమే, కానీ ఆరామంగా ఉండండి — ఇక్కడ అత్యవసరం ఏమీ లేదు. విలువలు కొద్దిగా మారడం చాలా సాధారణం. డాక్టరే మీ మంచి సహచరుడు.",hi:"चिंता होना स्वाभाविक है, लेकिन घबराएँ नहीं — यहाँ कुछ भी आपातकालीन नहीं है। मानों का थोड़ा बदलना बहुत आम है। डॉक्टर आपकी सबसे अच्छी सहायता हैं।",ta:"கவலை வருவது இயல்பே, ஆனால் அமைதியாக இருங்கள் — இங்கு எதுவும் அவசரம் அல்ல. மதிப்புகள் சற்று மாறுவது மிகவும் பொதுவானது. மருத்துவரே சிறந்த துணை."},
+  nextSteps:{en:"Gentle next steps: 1) Note down any questions for your doctor, 2) Stay hydrated and eat balanced meals, 3) Try 20–30 minutes of light walking daily, 4) Repeat the test only as your doctor advises.",te:"తేలికపాటి చర్యలు: 1) డాక్టర్‌ను అడగాల్సిన ప్రశ్నలు రాసుకోండి, 2) నీళ్లు బాగా తాగండి, 3) రోజూ 20–30 నిమిషాలు నడవండి, 4) డాక్టర్ సలహా మేరకు మాత్రమే పరీక్షలు మళ్లీ చేయించండి.",hi:"आगे के कदम: 1) डॉक्टर से पूछने के सवाल लिखें, 2) पानी खूब पिएँ, 3) रोज़ 20–30 मिनट हल्की सैर करें, 4) जाँच केवल डॉक्टर की सलाह से दोहराएँ।",ta:"அடுத்த படிகள்: 1) மருத்துவரிடம் கேட்க கேள்விகளை எழுதுங்கள், 2) நீர் அதிகம் குடியுங்கள், 3) தினமும் 20–30 நிமிடங்கள் நடக்கவும், 4) மருத்துவர் ஆலோசனையின்படி மட்டும் சோதனை மீண்டும் செய்யவும்."}
+};
+
+const PATTERNS = [
+  {re:/hemoglobin|hb\s*[:=]/i, key:"hemoglobin"},
+  {re:/fasting blood sugar|glucose\s*[:=]|blood sugar/i, key:"sugar"},
+  {re:/blood pressure|bp\s*[:=]/i, key:"pressure"},
+  {re:/vitamin\s*d/i, key:"vitamin"},
+  {re:/cholesterol|ldl|hdl/i, key:"cholesterol"}
+];
+
+function analyze(){
+  const text = document.getElementById("report").value;
+  const lang = document.getElementById("lang").value;
+  const t = T[lang];
+  const res = document.getElementById("result");
+  const findings = document.getElementById("findings");
+  const summary = document.getElementById("summary");
+  if(!text.trim()){ alert(t.empty); return; }
+  findings.innerHTML = "";
+  let watchCount = 0;
+  PATTERNS.forEach(p=>{
+    if(p.re.test(text)){
+      watchCount++;
+      findings.innerHTML += `<div class="finding"><span class="tag">${t.watch}</span>
+        <h3 style="margin:8px 0 4px;font-size:1.05rem;text-transform:capitalize;">${p.key}</h3>
+        <p style="font-size:.93rem;color:#455a64;">${KB[p.key][lang]}</p></div>`;
+    }
+  });
+  summary.innerHTML = "<strong>" + (watchCount>0 ? t.someWatch : t.normal) + "</strong><br><br>" + t.next;
+  res.style.display = "block";
+  res.scrollIntoView({behavior:"smooth"});
+}
+
+// ---------- Chatbot ----------
+const chatWin = document.getElementById("chat-window");
+function addMsg(text, who){
+  const d = document.createElement("div");
+  d.className = "msg " + who;
+  d.textContent = text;
+  chatWin.appendChild(d);
+  chatWin.scrollTop = chatWin.scrollHeight;
+}
+function botReply(userText){
+  const lang = document.getElementById("chatLang").value;
+  const t = T[lang];
+  const lower = userText.toLowerCase();
+  for(const key in KB){
+    if(lower.includes(key) || (key==="worried" && (lower.includes("worry")||lower.includes("panic")||lower.includes("afraid")||lower.includes("భయ")||lower.includes("चिंता")||lower.includes("கவலை")))){
+      return KB[key][lang];
+    }
+    if(key==="nextSteps" && (lower.includes("next")||lower.includes("do")||lower.includes("ఏం చేయాలి")||lower.includes("क्या करें")||lower.includes("என்ன செய்வது"))){
+      return KB[key][lang];
+    }
+  }
+  if(lower.includes("report")||lower.includes("రిపోర్ట్")||lower.includes("रिपोर्ट")||lower.includes("அறிக்கை")){
+    return t.someWatch + " " + t.next;
+  }
+  return "That's a good question. I don't have a specific answer for it, but remember: slightly unusual values are very common and rarely urgent. The best step is a relaxed conversation with your doctor. Is there something else about your report I can explain?";
+}
+function send(preset){
+  const input = document.getElementById("chatText");
+  const text = preset || input.value.trim();
+  if(!text) return;
+  addMsg(text, "user");
+  input.value = "";
+  setTimeout(()=>addMsg(botReply(text), "bot"), 500);
+}
+const QUICK = {
+  en:["What does my report mean?","Should I be worried?","What should I do next?","Explain a term"],
+  te:["రిపోర్ట్ అర్థం ఏమిటి?","నేను భయపడాలా?","తర్వాత ఏం చేయాలి?","పదం వివరించండి"],
+  hi:["रिपोर्ट का मतलब?","क्या मुझे चिंता करनी चाहिए?","आगे क्या करें?","कोई शब्द समझाइए"],
+  ta:["அறிக்கை என்றால் என்ன?","கவலைப்பட வேண்டுமா?","அடுத்து என்ன செய்வது?","ஒரு சொல் விளக்கவும்"]
+};
+function loadQuick(){
+  const lang = document.getElementById("chatLang").value;
+  const q = document.getElementById("quickBtns");
+  q.innerHTML = "";
+  QUICK[lang].forEach(item=>{
+    const b = document.createElement("button");
+    b.textContent = item;
+    b.onclick = ()=>send(item);
+    q.appendChild(b);
+  });
+}
+document.getElementById("chatLang").addEventListener("change", loadQuick);
+loadQuick();
+addMsg("Hello! I'm CareBot 🌿 I'm here to help you understand your report calmly. What would you like to know?", "bot");
+</script>
+</body>
+</html>
